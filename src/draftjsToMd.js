@@ -45,7 +45,6 @@ const applyWrappingBlockStyle = (currentStyle, content) => {
 };
 
 const applyAtomicStyle = (block, entityMap, content) => {
-  console.log('applyAtomicStyle', block.type);
   if (block.type !== 'atomic') return content;
   // strip the test that was added in the media block
   const strippedContent = content.substring(0, content.length - block.text.length);

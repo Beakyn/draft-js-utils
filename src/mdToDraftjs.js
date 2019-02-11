@@ -1,6 +1,9 @@
 'use strict';
 
 const parse = require('@textlint/markdown-to-ast').parse;
+const { stateFromHTML } = require('draft-js-import-html');
+const { convertToRaw } = require('draft-js');
+// const htmlToDraft = require('html-to-draftjs');
 
 const defaultInlineStyles = {
   Strong: {
@@ -29,6 +32,7 @@ const getBlockStyleForMd = (node, blockStyles) => {
   const style = node.type;
   const ordered = node.ordered;
   const depth = node.depth;
+
   if (style === 'List' && ordered) {
     return 'ordered-list-item';
   } else if (style === 'Header') {
@@ -39,6 +43,8 @@ const getBlockStyleForMd = (node, blockStyles) => {
     node.children[0] &&
     node.children[0].type === 'Image'
   ) {
+    return 'atomic';
+  } else if (node.type === 'Html') {
     return 'atomic';
   } else if (node.type === 'Paragraph' && node.raw && node.raw.match(/^\[\[\s\S+\s.*\S+\s\]\]/)) {
     return 'atomic';
@@ -147,6 +153,21 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     });
   };
 
+  const addHtml = child => {
+    const string = child.raw;
+    const contentState = stateFromHTML(string);
+    const rawContentState = convertToRaw(contentState);
+    const htmlEntityMap = rawContentState.entityMap;
+
+    const entityKey = Object.keys(entityMap).length;
+    entityMap[entityKey] = htmlEntityMap[0];
+    entityRanges.push({
+      key: entityKey,
+      length: 1,
+      offset: text.length
+    });
+  };
+
   const parseChildren = (child, style) => {
     // RegEx: [[ embed url=<anything> ]]
     const videoShortcodeRegEx = /^\[\[\s(?:embed)\s(?:url=(\S+))\s\]\]/;
@@ -161,6 +182,9 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
         if (videoShortcodeRegEx.test(child.raw)) {
           addVideo(child);
         }
+        break;
+      case 'Html':
+        addHtml(child);
         break;
       default:
     }
@@ -184,7 +208,9 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
         addInlineStyleRange(text.length, child.value.length, inlineStyles[child.type].type);
       }
       text = `${text}${
-        child.type === 'Image' || videoShortcodeRegEx.test(child.raw) ? ' ' : child.value
+        child.type === 'Image' || child.type === 'Html' || videoShortcodeRegEx.test(child.raw)
+          ? ' '
+          : child.value
       }`;
     }
   };
