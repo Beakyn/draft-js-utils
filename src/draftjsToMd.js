@@ -1,5 +1,7 @@
 'use strict';
 
+const { dimensionsToString } = require('./utils/image');
+
 const defaultMarkdownDict = {
   BOLD: '__',
   ITALIC: '*'
@@ -43,6 +45,7 @@ const applyWrappingBlockStyle = (currentStyle, content) => {
 };
 
 const applyAtomicStyle = (block, entityMap, content) => {
+  console.log('applyAtomicStyle', block.type);
   if (block.type !== 'atomic') return content;
   // strip the test that was added in the media block
   const strippedContent = content.substring(0, content.length - block.text.length);
@@ -52,7 +55,11 @@ const applyAtomicStyle = (block, entityMap, content) => {
   if (type === 'draft-js-video-plugin-video') {
     return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
   }
-  return `${strippedContent}![${data.fileName || ''}](${data.url || data.src})`;
+  // return `${strippedContent}![${data.fileName || ''}](${data.url || data.src})`;
+  const result = `<img alt="${data.fileName || ''}" src="${data.url || data.src}" width="${
+    data.width
+  }" height="${data.height}" />`;
+  return result;
 };
 
 const getEntityStart = entity => {
