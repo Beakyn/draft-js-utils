@@ -1,113 +1,13 @@
-const defaultMarkdownDict = {
-  BOLD: '__',
-  ITALIC: '*'
-};
-
-const blockStyleDict = {
-  'unordered-list-item': '- ',
-  'header-one': '# ',
-  'header-two': '## ',
-  'header-three': '### ',
-  'header-four': '#### ',
-  'header-five': '##### ',
-  'header-six': '###### ',
-  blockquote: '> '
-};
-
-const wrappingBlockStyleDict = {
-  'code-block': '```'
-};
-
-const getBlockStyle = (currentStyle, appliedBlockStyles) => {
-  if (currentStyle === 'ordered-list-item') {
-    const counter = appliedBlockStyles.reduce((prev, style) => {
-      if (style === 'ordered-list-item') {
-        return prev + 1;
-      }
-      return prev;
-    }, 1);
-    return `${counter}. `;
-  }
-  return blockStyleDict[currentStyle] || '';
-};
-
-const applyWrappingBlockStyle = (currentStyle, content) => {
-  if (currentStyle in wrappingBlockStyleDict) {
-    const wrappingSymbol = wrappingBlockStyleDict[currentStyle];
-    return `${wrappingSymbol}\n${content}\n${wrappingSymbol}`;
-  }
-
-  return content;
-};
-
-const applyAtomicStyle = (block, entityMap, content) => {
-  if (block.type !== 'atomic') return content;
-  // strip the test that was added in the media block
-  const strippedContent = content.substring(0, content.length - block.text.length);
-  const key = block.entityRanges[0].key;
-  const type = entityMap[key].type;
-  const data = entityMap[key].data;
-  if (type === 'EMBEDDED_LINK') {
-    return block.text === ' '
-      ? `${strippedContent}<iframe allowfullscreen width="auto" height="auto" frameborder="0" src="${
-          data.src
-        }" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>`
-      : `${strippedContent}${block.text}`;
-  } else if (type === 'draft-js-video-plugin-video') {
-    return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
-  }
-  return `${strippedContent}![${data.fileName || ''}](${data.url || data.src})`;
-};
-
-const getEntityStart = ({ type }) => {
-  switch (type) {
-    case 'LINK':
-      return '[';
-    default:
-      return '';
-  }
-};
-
-const getEntityEnd = ({ type, data }) => {
-  switch (type) {
-    case 'LINK':
-      return `](${data.url})`;
-    default:
-      return '';
-  }
-};
-
-function fixWhitespacesInsideStyle(text, style) {
-  const { symbol } = style;
-
-  // Text before style-opening marker (including the marker)
-  const pre = text.slice(0, style.range.start);
-  // Text between opening and closing markers
-  const body = text.slice(style.range.start, style.range.end);
-  // Trimmed text between markers
-  const bodyTrimmed = body.trim();
-  // Text after closing marker
-  const post = text.slice(style.range.end);
-
-  const bodyTrimmedStart = style.range.start + body.indexOf(bodyTrimmed);
-
-  // Text between opening marker and trimmed content (leading spaces)
-  const prefix = text.slice(style.range.start, bodyTrimmedStart);
-  // Text between the end of trimmed content and closing marker (trailing spaces)
-  const postfix = text.slice(bodyTrimmedStart + bodyTrimmed.length, style.range.end);
-
-  // Temporary text that contains trimmed content wrapped into original pre- and post-texts
-  const newText = `${pre}${bodyTrimmed}${post}`;
-  // Insert leading and trailing spaces between pre-/post- contents and their respective markers
-  return newText.replace(
-    `${symbol}${bodyTrimmed}${symbol}`,
-    `${prefix}${symbol}${bodyTrimmed}${symbol}${postfix}`
-  );
-}
-
-function getInlineStyleRangesByLength(inlineStyleRanges) {
-  return [...inlineStyleRanges].sort((a, b) => b.length - a.length);
-}
+import {
+  applyAtomicStyle,
+  applyWrappingBlockStyle,
+  defaultMarkdownDict,
+  fixWhitespacesInsideStyle,
+  getBlockStyle,
+  getEntityStart,
+  getEntityEnd,
+  getInlineStyleRangesByLength
+} from './utils/markdown';
 
 function draftjsToMd({ blocks, entityMap }, extraMarkdownDict) {
   const markdownDict = { ...defaultMarkdownDict, ...extraMarkdownDict };
