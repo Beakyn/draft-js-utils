@@ -12,7 +12,7 @@
     "test": "$(npm bin)/mocha --compilers js:babel-register && npm run lint",
     "test-dev": "$(npm bin)/mocha --compilers js:babel-register --watch",
     "test-brk": "$(npm bin)/mocha --debug-brk",
-    "compile": "rm -rf dist && mkdir dist && parcel build src/index.js",
+    "compile": "rm -rf dist && mkdir dist && rollup src/index.js --format cjs --file dist/index.js ",
     "prepublish": "npm run compile",
     "precommit": "lint-staged"
   },
@@ -59,8 +59,8 @@
     "husky": "^0.14.3",
     "lint-staged": "^7.0.4",
     "mocha": "^2.4.5",
-    "parcel-bundler": "^1.11.0",
-    "prettier": "^1.11.1"
+    "prettier": "^1.11.1",
+    "rollup": "^1.1.2"
   },
   "dependencies": {
     "@textlint/markdown-to-ast": "^6.0.8"
