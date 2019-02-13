@@ -1,4 +1,3 @@
-import { containsImplementedHtmlTags } from './utils/html';
 import { parseMdLine, splitMdBlocks } from './utils/draft';
 
 function mdToDraftjs(mdString, extraStyles) {
@@ -9,7 +8,11 @@ function mdToDraftjs(mdString, extraStyles) {
   paragraphs.forEach(paragraph => {
     const result = parseMdLine(paragraph, entityMap, extraStyles);
     blocks.push({
-      text: result.text && containsImplementedHtmlTags(result.text) ? ' ' : result.text,
+      text:
+        (result.text.match(/<iframe /) || result.text.match(/<iframe>/)) &&
+        result.text.match(/<\/iframe>/)
+          ? ' '
+          : result.text,
       type: result.blockStyle,
       depth: 0,
       inlineStyleRanges: result.inlineStyleRanges,

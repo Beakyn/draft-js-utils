@@ -40,7 +40,12 @@ const getBlockStyleForMd = (node, blockStyles) => {
     return 'atomic';
   } else if (node.type === 'Paragraph' && node.raw && node.raw.match(/^\[\[\s\S+\s.*\S+\s\]\]/)) {
     return 'atomic';
-  } else if (node.type === 'Html' && node.raw && node.raw.match(/<iframe/)) {
+  } else if (
+    node.type === 'Html' &&
+    node.raw &&
+    (node.raw.match(/<iframe /) || node.raw.match(/<iframe>/)) &&
+    node.raw.match(/<\/iframe>/)
+  ) {
     return 'atomic';
   }
   return blockStyles[style];
@@ -94,7 +99,7 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
 
   const addHtml = child => {
     const pattern = /src="[^"]*"/g;
-    const src = pattern.exec(child.raw)[0] || '';
+    const src = (pattern.exec(child.raw) || [''])[0];
     const url = src.replace(`src="`, '').slice(0, -1);
 
     const entityKey = Object.keys(entityMap).length;
@@ -176,7 +181,12 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     const videoShortcodeRegEx = /^\[\[\s(?:embed)\s(?:url=(\S+))\s\]\]/;
     switch (child.type) {
       case 'Html':
-        addHtml(child);
+        if (
+          (child.raw.match(/<iframe /) || child.raw.match(/<iframe>/)) &&
+          child.raw.match(/<\/iframe>/)
+        ) {
+          addHtml(child);
+        }
         break;
       case 'Link':
         addLink(child);
