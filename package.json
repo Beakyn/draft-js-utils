@@ -1,7 +1,7 @@
 {
-  "name": "draftjs-md-converter",
-  "version": "1.1.1",
-  "description": "Converter for converting Draft.js state into Markdown and vice versa",
+  "name": "@beakyn/draft-js-utils",
+  "version": "1.2.0",
+  "description": "Draft.js utility belt for handling editor state conversions.",
   "main": "dist/index.js",
   "license": "MIT",
   "engines": {
@@ -12,34 +12,36 @@
     "test": "$(npm bin)/mocha --compilers js:babel-register && npm run lint",
     "test-dev": "$(npm bin)/mocha --compilers js:babel-register --watch",
     "test-brk": "$(npm bin)/mocha --debug-brk",
-    "compile": "rm -rf dist && mkdir dist && rollup src/index.js --format cjs --file dist/index.js ",
+    "compile":
+      "rm -rf dist && mkdir dist && rollup src/index.js --format cjs --file dist/index.js ",
     "prepublish": "npm run compile",
     "precommit": "lint-staged"
   },
   "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "git add"
-    ]
+    "*.js": ["eslint --fix", "git add"]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kadikraman/draftjs-md-converter.git"
+    "url": "git+https://github.com/Beakyn/draftjs-md-converter.git"
   },
-  "keywords": [
-    "Draft.js",
-    "Markdown",
-    "converter",
-    "react",
-    "rich",
-    "text",
-    "editor"
-  ],
+  "keywords": ["Draft.js", "Markdown", "converter", "react", "rich", "text", "editor"],
   "author": "Kadi Kraman",
+  "contributors": [
+    {
+      "name": "Augusto Falcão",
+      "email": "falcaoaugustos@gmail.com",
+      "url": "https://falcaoaugustos.github.io"
+    },
+    {
+      "name": "Matheus Albuquerque",
+      "email": "land@ythecombinator.space",
+      "url": "https://www.ythecombinator.space"
+    }
+  ],
   "bugs": {
-    "url": "https://github.com/kadikraman/draftjs-md-converter/issues"
+    "url": "https://github.com/Beakyn/draftjs-md-converter/issues"
   },
-  "homepage": "https://github.com/kadikraman/draftjs-md-converter#readme",
+  "homepage": "https://github.com/Beakyn/draftjs-md-converter#readme",
   "devDependencies": {
     "babel": "^6.5.2",
     "babel-cli": "^6.7.5",
