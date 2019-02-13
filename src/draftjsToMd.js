@@ -1,5 +1,3 @@
-'use strict';
-
 const defaultMarkdownDict = {
   BOLD: '__',
   ITALIC: '*'
@@ -61,8 +59,8 @@ const applyAtomicStyle = (block, entityMap, content) => {
   return `${strippedContent}![${data.fileName || ''}](${data.url || data.src})`;
 };
 
-const getEntityStart = entity => {
-  switch (entity.type) {
+const getEntityStart = ({ type }) => {
+  switch (type) {
     case 'LINK':
       return '[';
     default:
@@ -70,10 +68,10 @@ const getEntityStart = entity => {
   }
 };
 
-const getEntityEnd = entity => {
-  switch (entity.type) {
+const getEntityEnd = ({ type, data }) => {
+  switch (type) {
     case 'LINK':
-      return `](${entity.data.url})`;
+      return `](${data.url})`;
     default:
       return '';
   }
@@ -111,7 +109,7 @@ function getInlineStyleRangesByLength(inlineStyleRanges) {
   return [...inlineStyleRanges].sort((a, b) => b.length - a.length);
 }
 
-function draftjsToMd(raw, extraMarkdownDict) {
+function draftjsToMd({ blocks, entityMap }, extraMarkdownDict) {
   const markdownDict = { ...defaultMarkdownDict, ...extraMarkdownDict };
   let returnString = '';
   const appliedBlockStyles = [];
@@ -119,7 +117,7 @@ function draftjsToMd(raw, extraMarkdownDict) {
   // totalOffset is a difference of index position between raw string and enhanced ones
   let totalOffset = 0;
 
-  raw.blocks.forEach((block, blockIndex) => {
+  blocks.forEach((block, blockIndex) => {
     if (blockIndex !== 0) {
       returnString += '\n';
       totalOffset = 0;
@@ -137,28 +135,28 @@ function draftjsToMd(raw, extraMarkdownDict) {
 
       // find all styled at this character
       const stylesStartAtChar = sortedInlineStyleRanges
-        .filter(range => range.offset === index)
-        .filter(range => markdownDict[range.style]); // disregard styles not defined in the md dict
+        .filter(({ offset }) => offset === index)
+        .filter(({ style }) => markdownDict[style]); // disregard styles not defined in the md dict
 
       // add the symbol to the md string and push the style in the applied styles stack
-      stylesStartAtChar.forEach(currentStyle => {
-        const symbolLength = markdownDict[currentStyle.style].length;
-        newText += markdownDict[currentStyle.style];
+      stylesStartAtChar.forEach(({ style, offset, length }) => {
+        const symbolLength = markdownDict[style].length;
+        newText += markdownDict[style];
         totalOffset += symbolLength;
         appliedStyles.push({
-          symbol: markdownDict[currentStyle.style],
+          symbol: markdownDict[style],
           range: {
-            start: currentStyle.offset + totalOffset,
-            end: currentStyle.offset + currentStyle.length + totalOffset
+            start: offset + totalOffset,
+            end: offset + length + totalOffset
           },
-          end: currentStyle.offset + (currentStyle.length - 1)
+          end: offset + (length - 1)
         });
       });
 
       // check for entityRanges starting and add if existing
-      const entitiesStartAtChar = block.entityRanges.filter(range => range.offset === index);
-      entitiesStartAtChar.forEach(entity => {
-        newText += getEntityStart(raw.entityMap[entity.key]);
+      const entitiesStartAtChar = block.entityRanges.filter(({ offset }) => offset === index);
+      entitiesStartAtChar.forEach(({ key }) => {
+        newText += getEntityStart(entityMap[key]);
       });
 
       // add the current character to the md string
@@ -166,10 +164,10 @@ function draftjsToMd(raw, extraMarkdownDict) {
 
       // check for entityRanges ending and add if existing
       const entitiesEndAtChar = block.entityRanges.filter(
-        range => range.offset + range.length - 1 === index
+        ({ offset, length }) => offset + length - 1 === index
       );
-      entitiesEndAtChar.forEach(entity => {
-        newText += getEntityEnd(raw.entityMap[entity.key]);
+      entitiesEndAtChar.forEach(({ key }) => {
+        newText += getEntityEnd(entityMap[key]);
       });
 
       // apply the 'ending' tags for any styles that end in the current position in order (stack)
@@ -185,9 +183,9 @@ function draftjsToMd(raw, extraMarkdownDict) {
     }, '');
 
     returnString = applyWrappingBlockStyle(block.type, returnString);
-    returnString = applyAtomicStyle(block, raw.entityMap, returnString);
+    returnString = applyAtomicStyle(block, entityMap, returnString);
   });
   return returnString;
 }
 
-module.exports.draftjsToMd = draftjsToMd;
+export { draftjsToMd };

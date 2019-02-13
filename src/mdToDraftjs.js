@@ -1,7 +1,5 @@
-'use strict';
-
-const parse = require('@textlint/markdown-to-ast').parse;
-const { containsImplementedHtmlTags } = require('./utils/html');
+import { parse } from '@textlint/markdown-to-ast';
+import { containsImplementedHtmlTags } from './utils/html';
 
 const defaultInlineStyles = {
   Strong: {
@@ -93,7 +91,7 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
   };
 
   const getRawLength = children =>
-    children.reduce((prev, current) => prev + (current.value ? current.value.length : 0), 0);
+    children.reduce((prev, { value }) => prev + (value ? value.length : 0), 0);
 
   const addHtml = child => {
     const pattern = /src="[^"]*"/g;
@@ -119,31 +117,31 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     });
   };
 
-  const addLink = child => {
+  const addLink = ({ url, children }) => {
     const entityKey = Object.keys(entityMap).length;
     entityMap[entityKey] = {
       type: 'LINK',
       mutability: 'MUTABLE',
       data: {
-        url: child.url
+        url
       }
     };
     entityRanges.push({
       key: entityKey,
-      length: getRawLength(child.children),
+      length: getRawLength(children),
       offset: text.length
     });
   };
 
-  const addImage = child => {
+  const addImage = ({ url, alt }) => {
     const entityKey = Object.keys(entityMap).length;
     entityMap[entityKey] = {
       type: 'IMAGE',
       mutability: 'IMMUTABLE',
       data: {
-        url: child.url,
-        src: child.url,
-        fileName: child.alt || ''
+        url,
+        src: url,
+        fileName: alt || ''
       }
     };
     entityRanges.push({
@@ -153,8 +151,8 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     });
   };
 
-  const addVideo = child => {
-    const string = child.raw;
+  const addVideo = ({ raw }) => {
+    const string = raw;
 
     // RegEx: [[ embed url=<anything> ]]
     const url = string.match(/^\[\[\s(?:embed)\s(?:url=(\S+))\s\]\]/)[1];
@@ -274,4 +272,4 @@ function mdToDraftjs(mdString, extraStyles) {
   };
 }
 
-module.exports.mdToDraftjs = mdToDraftjs;
+export { mdToDraftjs };
