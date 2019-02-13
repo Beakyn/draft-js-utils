@@ -1,5 +1,5 @@
 {
-  "name": "bkn-draft-js-utils",
+  "name": "@beakyn/draft-js-utils",
   "version": "1.2.0",
   "description": "Draft.js utility belt for handling editor state conversions.",
   "main": "dist/index.js",
