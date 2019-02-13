@@ -1,6 +1,7 @@
 'use strict';
 
 const parse = require('@textlint/markdown-to-ast').parse;
+const { containsImplementedHtmlTags } = require('./utils/html');
 
 const defaultInlineStyles = {
   Strong: {
@@ -249,7 +250,7 @@ function mdToDraftjs(mdString, extraStyles) {
   paragraphs.forEach(paragraph => {
     const result = parseMdLine(paragraph, entityMap, extraStyles);
     blocks.push({
-      text: result.text,
+      text: result.text && containsImplementedHtmlTags(result.text) ? ' ' : result.text,
       type: result.blockStyle,
       depth: 0,
       inlineStyleRanges: result.inlineStyleRanges,
