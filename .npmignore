@@ -3,4 +3,5 @@ index.html
 test
 .eslintrc.js
 .travis.yml
+.cache
 index.js

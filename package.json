@@ -12,7 +12,7 @@
     "test": "$(npm bin)/mocha --compilers js:babel-register && npm run lint",
     "test-dev": "$(npm bin)/mocha --compilers js:babel-register --watch",
     "test-brk": "$(npm bin)/mocha --debug-brk",
-    "compile": "rm -rf dist && mkdir dist && rollup -c",
+    "compile": "rm -rf dist && mkdir dist && rollup -c -o dist/index.js",
     "prepublish": "npm run compile",
     "precommit": "lint-staged"
   },
