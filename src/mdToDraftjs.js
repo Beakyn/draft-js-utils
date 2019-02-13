@@ -95,7 +95,7 @@ const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     children.reduce((prev, current) => prev + (current.value ? current.value.length : 0), 0);
 
   const addHtml = child => {
-    const pattern = /src="[\w:._\-?&=/]*\"/g;
+    const pattern = /src="[^"]*"/g;
     const src = pattern.exec(child.raw)[0] || '';
     const url = src.replace(`src="`, '').slice(0, -1);
 
