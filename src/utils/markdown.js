@@ -49,9 +49,7 @@ export const applyAtomicStyle = (block, entityMap, content) => {
   const data = entityMap[key].data;
   if (type === 'EMBEDDED_LINK') {
     return block.text === ' '
-      ? `${strippedContent}<iframe allowfullscreen width="auto" height="auto" frameborder="0" src="${
-          data.src
-        }" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>`
+      ? `${strippedContent}${data.metadata.raw}`
       : `${strippedContent}${block.text}`;
   } else if (type === 'draft-js-video-plugin-video') {
     return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
