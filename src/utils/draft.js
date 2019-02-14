@@ -1,4 +1,5 @@
 import { parse } from '@textlint/markdown-to-ast';
+import { defaultTagValues } from './html';
 
 const defaultInlineStyles = {
   Strong: {
@@ -98,20 +99,26 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     children.reduce((prev, { value }) => prev + (value ? value.length : 0), 0);
 
   const addHtml = child => {
-    const pattern = /src="[^"]*"/g;
-    const src = (pattern.exec(child.raw) || [''])[0];
-    const url = src.replace(`src="`, '').slice(0, -1);
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(child.raw, 'text/html');
+
+    const {
+      src = defaultTagValues.src,
+      width = defaultTagValues.width,
+      height = defaultTagValues.height
+    } = htmlDoc.getElementsByTagName('iframe')[0].attributes;
 
     const entityKey = Object.keys(entityMap).length;
     entityMap[entityKey] = {
       type: 'EMBEDDED_LINK',
       mutability: 'MUTABLE',
-      // type: 'draft-js-video-plugin-video',
-      // mutability: 'IMMUTABLE',
       data: {
-        src: url || child.url,
-        height: 'auto',
-        width: 'auto'
+        src: src.value || child.url,
+        width: width.value,
+        height: height.value,
+        metadata: {
+          raw: child.raw
+        }
       }
     };
     entityRanges.push({
