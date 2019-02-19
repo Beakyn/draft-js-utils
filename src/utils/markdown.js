@@ -49,13 +49,21 @@ export const applyAtomicStyle = (block, entityMap, content) => {
   const data = entityMap[key].data;
   if (type === 'EMBEDDED_LINK') {
     return block.text === ' '
-      ? `${strippedContent}${data.metadata.raw}`
+      ? `${strippedContent}${
+          data.metadata
+            ? data.metadata.raw
+            : `<iframe src="${data.src}" width="${data.width}" height="${data.height}></iframe>"`
+        }`
       : `${strippedContent}${block.text}`;
   } else if (type === 'draft-js-video-plugin-video') {
     return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
   } else if (type === 'IMAGE') {
     return block.text === ' '
-      ? `${strippedContent}${data.metadata.raw}`
+      ? `${strippedContent}${
+          data.metadata
+            ? data.metadata.raw
+            : `<img src="${data.src}" width="${data.width}" height="${data.height}">`
+        }`
       : `${strippedContent}${block.text}`;
   }
   return `${strippedContent}<img alt="${data.fileName || ''}" src="${data.url || data.src}" />`;
