@@ -1,4 +1,5 @@
 import { parseMdLine, splitMdBlocks } from './utils/draft';
+import { isHtmlBlock } from './utils/html';
 
 function mdToDraftjs(mdString, extraStyles) {
   const paragraphs = splitMdBlocks(mdString);
@@ -29,11 +30,7 @@ function mdToDraftjs(mdString, extraStyles) {
     }
 
     blocks.push({
-      text:
-        (result.text.match(/<iframe /) || result.text.match(/<iframe>/)) &&
-        result.text.match(/<\/iframe>/)
-          ? ' '
-          : result.text,
+      text: isHtmlBlock(result.text) ? ' ' : result.text,
       type: result.blockStyle,
       depth: 0,
       inlineStyleRanges: result.inlineStyleRanges,

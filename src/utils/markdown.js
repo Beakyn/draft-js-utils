@@ -53,8 +53,12 @@ export const applyAtomicStyle = (block, entityMap, content) => {
       : `${strippedContent}${block.text}`;
   } else if (type === 'draft-js-video-plugin-video') {
     return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
+  } else if (type === 'IMAGE') {
+    return block.text === ' '
+      ? `${strippedContent}${data.metadata.raw}`
+      : `${strippedContent}${block.text}`;
   }
-  return `${strippedContent}![${data.fileName || ''}](${data.url || data.src})`;
+  return `${strippedContent}<img alt="${data.fileName || ''}" src="${data.url || data.src}" />`;
 };
 
 export const getEntityStart = ({ type }) => {

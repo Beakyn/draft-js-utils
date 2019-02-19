@@ -1,7 +1,3 @@
-const implementedHtmlTags = ['iframe'];
-
-const containsImplementedHtmlTags = string => implementedHtmlTags.some(str => string.includes(str));
-
 const defaultTagValues = {
   src: {
     value: ''
@@ -14,4 +10,11 @@ const defaultTagValues = {
   }
 };
 
-export { containsImplementedHtmlTags, defaultTagValues };
+const isImgBlock = rawText => rawText.match(/<img /) || rawText.match(/<img>/);
+
+const isIframeBlock = rawText =>
+  (rawText.match(/<iframe /) || rawText.match(/<iframe>/)) && rawText.match(/<\/iframe>/);
+
+const isHtmlBlock = rawText => isIframeBlock(rawText) || isImgBlock(rawText);
+
+export { defaultTagValues, isHtmlBlock, isIframeBlock, isImgBlock };

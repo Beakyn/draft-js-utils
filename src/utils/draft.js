@@ -1,5 +1,5 @@
 import { parse } from '@textlint/markdown-to-ast';
-import { defaultTagValues } from './html';
+import { defaultTagValues, isIframeBlock, isImgBlock } from './html';
 
 const defaultInlineStyles = {
   Strong: {
@@ -46,6 +46,12 @@ const getBlockStyleForMd = (node, blockStyles) => {
     node.raw &&
     (node.raw.match(/<iframe /) || node.raw.match(/<iframe>/)) &&
     node.raw.match(/<\/iframe>/)
+  ) {
+    return 'atomic';
+  } else if (
+    node.type === 'Html' &&
+    node.raw &&
+    (node.raw.match(/<img /) || node.raw.match(/<img>/))
   ) {
     return 'atomic';
   }
@@ -102,30 +108,65 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     const parser = new DOMParser();
     const htmlDoc = parser.parseFromString(child.raw, 'text/html');
 
+    let el = null;
+
+    if (child.raw.includes('iframe')) {
+      el = htmlDoc.getElementsByTagName('iframe')[0];
+    } else if (child.raw.includes('img')) {
+      el = htmlDoc.getElementsByTagName('img')[0];
+    }
+
+    const { attributes } = el;
     const {
       src = defaultTagValues.src,
       width = defaultTagValues.width,
       height = defaultTagValues.height
-    } = htmlDoc.getElementsByTagName('iframe')[0].attributes;
+    } = attributes;
 
-    const entityKey = Object.keys(entityMap).length;
-    entityMap[entityKey] = {
-      type: 'EMBEDDED_LINK',
-      mutability: 'MUTABLE',
-      data: {
-        src: src.value || child.url,
-        width: width.value,
-        height: height.value,
-        metadata: {
-          raw: child.raw
+    if (child.raw.includes('iframe')) {
+      const entityKey = Object.keys(entityMap).length;
+      entityMap[entityKey] = {
+        type: 'EMBEDDED_LINK',
+        mutability: 'MUTABLE',
+        data: {
+          src: src.value || child.url,
+          width: width.value,
+          height: height.value,
+          metadata: {
+            raw: child.raw
+          }
         }
-      }
-    };
-    entityRanges.push({
-      key: entityKey,
-      length: 1,
-      offset: text.length
-    });
+      };
+      entityRanges.push({
+        key: entityKey,
+        length: 1,
+        offset: text.length
+      });
+    } else if (child.raw.includes('img')) {
+      const entityKey = Object.keys(entityMap).length;
+
+      const alt = 'Alt';
+
+      entityMap[entityKey] = {
+        type: 'IMAGE',
+        mutability: 'MUTABLE',
+        data: {
+          url: src.value || child.url,
+          src: src.value || child.url,
+          fileName: alt || '',
+          width: width.value,
+          height: height.value,
+          metadata: {
+            raw: child.raw
+          }
+        }
+      };
+      entityRanges.push({
+        key: entityKey,
+        length: 1,
+        offset: text.length
+      });
+    }
   };
 
   const addLink = ({ url, children }) => {
@@ -188,10 +229,9 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     const videoShortcodeRegEx = /^\[\[\s(?:embed)\s(?:url=(\S+))\s\]\]/;
     switch (child.type) {
       case 'Html':
-        if (
-          (child.raw.match(/<iframe /) || child.raw.match(/<iframe>/)) &&
-          child.raw.match(/<\/iframe>/)
-        ) {
+        if (isIframeBlock(child.raw)) {
+          addHtml(child);
+        } else if (isImgBlock(child.raw)) {
           addHtml(child);
         }
         break;
