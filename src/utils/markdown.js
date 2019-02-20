@@ -1,3 +1,5 @@
+import { defaultTagValues } from './html';
+
 const blockStyleDict = {
   'unordered-list-item': '- ',
   'header-one': '# ',
@@ -11,6 +13,39 @@ const blockStyleDict = {
 
 const wrappingBlockStyleDict = {
   'code-block': '```'
+};
+
+const unwrapAttributes = data => {
+  const {
+    src = defaultTagValues.src.value,
+    width = defaultTagValues.width.value,
+    height = defaultTagValues.height.value
+  } = data;
+
+  return { src, width, height };
+};
+
+const generateAtomicStyle = {
+  iframe: (blockText, data, strippedContent) => {
+    const { src, width, height } = unwrapAttributes(data);
+    return blockText === ' '
+      ? `${strippedContent}${
+          data.metadata
+            ? data.metadata.raw
+            : `<iframe src="${src}" width="${width}" height="${height}></iframe>"`
+        }`
+      : `${strippedContent}${blockText}`;
+  },
+  img: (blockText, data, strippedContent) => {
+    const { src, width, height } = unwrapAttributes(data);
+    return blockText === ' '
+      ? `${strippedContent}${
+          data.metadata
+            ? data.metadata.raw
+            : `<img src="${src}" width="${width}" height="${height}">`
+        }`
+      : `${strippedContent}${blockText}`;
+  }
 };
 
 export const defaultMarkdownDict = {
@@ -48,23 +83,11 @@ export const applyAtomicStyle = (block, entityMap, content) => {
   const type = entityMap[key].type;
   const data = entityMap[key].data;
   if (type === 'EMBEDDED_LINK') {
-    return block.text === ' '
-      ? `${strippedContent}${
-          data.metadata
-            ? data.metadata.raw
-            : `<iframe src="${data.src}" width="${data.width}" height="${data.height}></iframe>"`
-        }`
-      : `${strippedContent}${block.text}`;
+    return generateAtomicStyle.iframe(block.text, data, strippedContent);
+  } else if (type === 'IMAGE') {
+    return generateAtomicStyle.img(block.text, data, strippedContent);
   } else if (type === 'draft-js-video-plugin-video') {
     return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
-  } else if (type === 'IMAGE') {
-    return block.text === ' '
-      ? `${strippedContent}${
-          data.metadata
-            ? data.metadata.raw
-            : `<img src="${data.src}" width="${data.width}" height="${data.height}">`
-        }`
-      : `${strippedContent}${block.text}`;
   }
   return `${strippedContent}<img alt="${data.fileName || ''}" src="${data.url || data.src}" />`;
 };
