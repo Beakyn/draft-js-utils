@@ -87,6 +87,65 @@ export const splitMdBlocks = md => {
   return splitMdWithCodeBlocks;
 };
 
+const handleHtmlIframe = (entityMap, entityRanges, attributes, child, text) => {
+  const {
+    src = defaultTagValues.src,
+    width = defaultTagValues.width,
+    height = defaultTagValues.height
+  } = attributes;
+
+  const entityKey = Object.keys(entityMap).length;
+  // eslint-disable-next-line no-param-reassign
+  entityMap[entityKey] = {
+    type: 'EMBEDDED_LINK',
+    mutability: 'MUTABLE',
+    data: {
+      src: src.value || child.url,
+      width: width.value,
+      height: height.value,
+      metadata: {
+        raw: child.raw
+      }
+    }
+  };
+  entityRanges.push({
+    key: entityKey,
+    length: 1,
+    offset: text.length
+  });
+};
+
+const handleHtmlImage = (entityMap, entityRanges, attributes, child, text) => {
+  const {
+    src = defaultTagValues.src,
+    width = defaultTagValues.width,
+    height = defaultTagValues.height,
+    alt = defaultTagValues.alt
+  } = attributes;
+
+  const entityKey = Object.keys(entityMap).length;
+  // eslint-disable-next-line no-param-reassign
+  entityMap[entityKey] = {
+    type: 'IMAGE',
+    mutability: 'MUTABLE',
+    data: {
+      url: src.value || child.url,
+      src: src.value || child.url,
+      fileName: alt.value,
+      width: width.value,
+      height: height.value,
+      metadata: {
+        raw: child.raw
+      }
+    }
+  };
+  entityRanges.push({
+    key: entityKey,
+    length: 1,
+    offset: text.length
+  });
+};
+
 export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
   const inlineStyles = { ...defaultInlineStyles, ...extraStyles.inlineStyles };
   const blockStyles = { ...defaultBlockStyles, ...extraStyles.blockStyles };
@@ -117,55 +176,11 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     }
 
     const { attributes } = el;
-    const {
-      src = defaultTagValues.src,
-      width = defaultTagValues.width,
-      height = defaultTagValues.height
-    } = attributes;
 
     if (child.raw.includes('iframe')) {
-      const entityKey = Object.keys(entityMap).length;
-      entityMap[entityKey] = {
-        type: 'EMBEDDED_LINK',
-        mutability: 'MUTABLE',
-        data: {
-          src: src.value || child.url,
-          width: width.value,
-          height: height.value,
-          metadata: {
-            raw: child.raw
-          }
-        }
-      };
-      entityRanges.push({
-        key: entityKey,
-        length: 1,
-        offset: text.length
-      });
+      handleHtmlIframe(entityMap, entityRanges, attributes, child, text);
     } else if (child.raw.includes('img')) {
-      const entityKey = Object.keys(entityMap).length;
-
-      const alt = 'Alt';
-
-      entityMap[entityKey] = {
-        type: 'IMAGE',
-        mutability: 'MUTABLE',
-        data: {
-          url: src.value || child.url,
-          src: src.value || child.url,
-          fileName: alt || '',
-          width: width.value,
-          height: height.value,
-          metadata: {
-            raw: child.raw
-          }
-        }
-      };
-      entityRanges.push({
-        key: entityKey,
-        length: 1,
-        offset: text.length
-      });
+      handleHtmlImage(entityMap, entityRanges, attributes, child, text);
     }
   };
 
