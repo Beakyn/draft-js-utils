@@ -1,5 +1,5 @@
 import { parse } from '@textlint/markdown-to-ast';
-import { defaultTagValues, isIframeBlock, isImgBlock } from './html';
+import { defaultTagValues, isIframeBlock, isImgBlock, isLinkBlock } from './html';
 
 const defaultInlineStyles = {
   Strong: {
@@ -22,6 +22,17 @@ const defaultBlockStyles = {
   Header6: 'header-six',
   CodeBlock: 'code-block',
   BlockQuote: 'blockquote'
+};
+
+const getRawLength = children =>
+  children.reduce((prev, { value }) => prev + (value ? value.length : 0), 0);
+
+const getRawHtmlData = children => {
+  const parser = new DOMParser();
+  const htmlDoc = parser.parseFromString(children, 'text/html');
+  const el = htmlDoc.getElementsByTagName('a')[0];
+  const { data } = el.childNodes[0];
+  return { text: data, length: data.length };
 };
 
 const getBlockStyleForMd = (node, blockStyles) => {
@@ -53,6 +64,8 @@ const getBlockStyleForMd = (node, blockStyles) => {
     node.raw &&
     (node.raw.match(/<img /) || node.raw.match(/<img>/))
   ) {
+    return 'atomic';
+  } else if (node.type === 'Html' && node.raw && (node.raw.match(/<a /) || node.raw.match(/<a>/))) {
     return 'atomic';
   }
   return blockStyles[style];
@@ -146,6 +159,24 @@ const handleHtmlImage = (entityMap, entityRanges, attributes, child, text) => {
   });
 };
 
+const handleHtmlLink = (entityMap, entityRanges, attributes, child, text) => {
+  const { href = defaultTagValues.href } = attributes;
+
+  const entityKey = Object.keys(entityMap).length;
+  entityMap[entityKey] = {
+    type: 'LINK',
+    mutability: 'MUTABLE',
+    data: {
+      url: href.value
+    }
+  };
+  entityRanges.push({
+    key: entityKey,
+    length: getRawHtmlData(child.raw).length,
+    offset: text.length
+  });
+};
+
 export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
   const inlineStyles = { ...defaultInlineStyles, ...extraStyles.inlineStyles };
   const blockStyles = { ...defaultBlockStyles, ...extraStyles.blockStyles };
@@ -160,9 +191,6 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
     inlineStyleRanges.push({ offset, length, style });
   };
 
-  const getRawLength = children =>
-    children.reduce((prev, { value }) => prev + (value ? value.length : 0), 0);
-
   const addHtml = child => {
     const parser = new DOMParser();
     const htmlDoc = parser.parseFromString(child.raw, 'text/html');
@@ -173,6 +201,8 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
       el = htmlDoc.getElementsByTagName('iframe')[0];
     } else if (child.raw.includes('img')) {
       el = htmlDoc.getElementsByTagName('img')[0];
+    } else if (isLinkBlock(child.raw)) {
+      el = htmlDoc.getElementsByTagName('a')[0];
     }
 
     const { attributes } = el;
@@ -181,6 +211,8 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
       handleHtmlIframe(entityMap, entityRanges, attributes, child, text);
     } else if (child.raw.includes('img')) {
       handleHtmlImage(entityMap, entityRanges, attributes, child, text);
+    } else if (isLinkBlock(child.raw)) {
+      handleHtmlLink(entityMap, entityRanges, attributes, child, text);
     }
   };
 
@@ -248,6 +280,8 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
           addHtml(child);
         } else if (isImgBlock(child.raw)) {
           addHtml(child);
+        } else if (isLinkBlock(child.raw)) {
+          addHtml(child);
         }
         break;
       case 'Link':
@@ -257,14 +291,18 @@ export const parseMdLine = (line, existingEntities, extraStyles = {}) => {
         addImage(child);
         break;
       case 'Paragraph':
-        if (videoShortcodeRegEx.test(child.raw)) {
+        if (isLinkBlock(child.raw)) {
+          addHtml(child);
+        } else if (videoShortcodeRegEx.test(child.raw)) {
           addVideo(child);
         }
         break;
       default:
     }
 
-    if (!videoShortcodeRegEx.test(child.raw) && child.children && style) {
+    if (isLinkBlock(child.raw)) {
+      text = getRawHtmlData(child.raw).text;
+    } else if (!videoShortcodeRegEx.test(child.raw) && child.children && style) {
       const rawLength = getRawLength(child.children);
       addInlineStyleRange(text.length, rawLength, style.type);
       const newStyle = inlineStyles[child.type];
