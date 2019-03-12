@@ -13,6 +13,9 @@ const defaultTagValues = {
   },
   href: {
     value: ''
+  },
+  target: {
+    value: '_blank'
   }
 };
 

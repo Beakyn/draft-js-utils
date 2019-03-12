@@ -107,9 +107,10 @@ export const applyAtomicStyle = (block, entityMap, content) => {
 };
 
 export const getEntityStart = ({ type, data }) => {
+  const { url = '', targetOption = '_blank' } = data;
   switch (type) {
     case 'LINK':
-      return `<a target="_blank" rel=“noopener noreferrer nofollow” href="${data.url}">`;
+      return `<a target="${targetOption}" rel=“noopener noreferrer nofollow” href="${url}">`;
     default:
       return '';
   }

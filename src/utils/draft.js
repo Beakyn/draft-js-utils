@@ -160,14 +160,15 @@ const handleHtmlImage = (entityMap, entityRanges, attributes, child, text) => {
 };
 
 const handleHtmlLink = (entityMap, entityRanges, attributes, child, text) => {
-  const { href = defaultTagValues.href } = attributes;
+  const { href = defaultTagValues.href, target = defaultTagValues.target } = attributes;
 
   const entityKey = Object.keys(entityMap).length;
   entityMap[entityKey] = {
     type: 'LINK',
     mutability: 'MUTABLE',
     data: {
-      url: href.value
+      url: href.value,
+      targetOption: target.value
     }
   };
   entityRanges.push({
