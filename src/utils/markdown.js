@@ -109,7 +109,7 @@ export const applyAtomicStyle = (block, entityMap, content) => {
 export const getEntityStart = ({ type, data }) => {
   switch (type) {
     case 'LINK':
-      return `<a href="${data.url}">`;
+      return `<a target="_blank" rel=“noopener noreferrer nofollow” href="${data.url}">`;
     default:
       return '';
   }
