@@ -19,10 +19,12 @@ const unwrapAttributes = data => {
   const {
     src = defaultTagValues.src.value,
     width = defaultTagValues.width.value,
-    height = defaultTagValues.height.value
+    height = defaultTagValues.height.value,
+    alt = defaultTagValues.alt.value,
+    href = defaultTagValues.href.value
   } = data;
 
-  return { src, width, height };
+  return { src, width, height, alt, href };
 };
 
 const generateAtomicStyle = {
@@ -44,6 +46,12 @@ const generateAtomicStyle = {
             ? data.metadata.raw
             : `<img src="${src}" width="${width}" height="${height}">`
         }`
+      : `${strippedContent}${blockText}`;
+  },
+  link: (blockText, data, strippedContent) => {
+    const { href } = unwrapAttributes(data);
+    return blockText === ' '
+      ? `${strippedContent}${data.metadata ? data.metadata.raw : `<a href="${href}"></a>`}`
       : `${strippedContent}${blockText}`;
   }
 };
@@ -86,6 +94,8 @@ export const applyAtomicStyle = (block, entityMap, content) => {
     return generateAtomicStyle.iframe(block.text, data, strippedContent);
   } else if (type === 'IMAGE') {
     return generateAtomicStyle.img(block.text, data, strippedContent);
+  } else if (type === 'LINK') {
+    return generateAtomicStyle.link(block.text, data, strippedContent);
   } else if (type === 'draft-js-video-plugin-video') {
     return `${strippedContent}[[ embed url=${data.url || data.src} ]]`;
   }
