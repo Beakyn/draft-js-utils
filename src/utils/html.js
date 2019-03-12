@@ -7,6 +7,12 @@ const defaultTagValues = {
   },
   height: {
     value: 'auto'
+  },
+  alt: {
+    value: ''
+  },
+  href: {
+    value: ''
   }
 };
 
@@ -15,6 +21,10 @@ const isImgBlock = rawText => rawText.match(/<img /) || rawText.match(/<img>/);
 const isIframeBlock = rawText =>
   (rawText.match(/<iframe /) || rawText.match(/<iframe>/)) && rawText.match(/<\/iframe>/);
 
-const isHtmlBlock = rawText => isIframeBlock(rawText) || isImgBlock(rawText);
+const isLinkBlock = rawText =>
+  (rawText.match(/<a /) || rawText.match(/<a>/)) && rawText.match(/<\/a>/);
 
-export { defaultTagValues, isHtmlBlock, isIframeBlock, isImgBlock };
+const isHtmlBlock = rawText =>
+  isIframeBlock(rawText) || isImgBlock(rawText) || isLinkBlock(rawText);
+
+export { defaultTagValues, isHtmlBlock, isIframeBlock, isImgBlock, isLinkBlock };
