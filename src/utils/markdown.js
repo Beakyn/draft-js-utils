@@ -51,7 +51,11 @@ const generateAtomicStyle = {
   link: (blockText, data, strippedContent) => {
     const { href } = unwrapAttributes(data);
     return blockText === ' '
-      ? `${strippedContent}${data.metadata ? data.metadata.raw : `<a href="${href}"></a>`}`
+      ? `${strippedContent}${
+          data.metadata
+            ? data.metadata.raw
+            : `<a target="_blank" rel=“noopener noreferrer nofollow” href="${href}"></a>`
+        }`
       : `${strippedContent}${blockText}`;
   }
 };
@@ -102,19 +106,19 @@ export const applyAtomicStyle = (block, entityMap, content) => {
   return `${strippedContent}<img alt="${data.fileName || ''}" src="${data.url || data.src}" />`;
 };
 
-export const getEntityStart = ({ type }) => {
+export const getEntityStart = ({ type, data }) => {
   switch (type) {
     case 'LINK':
-      return '[';
+      return `<a href="${data.url}">`;
     default:
       return '';
   }
 };
 
-export const getEntityEnd = ({ type, data }) => {
+export const getEntityEnd = ({ type }) => {
   switch (type) {
     case 'LINK':
-      return `](${data.url})`;
+      return `</a>`;
     default:
       return '';
   }
